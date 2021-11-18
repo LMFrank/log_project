@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	tailObj *tail.Tail
+	TailObj *tail.Tail
 )
 
 func Init(fileName string) (err error) {
@@ -17,9 +17,10 @@ func Init(fileName string) (err error) {
 		MustExist: false,
 		Poll:      true,
 	}
-	tailObj, err = tail.TailFile(fileName, cfg)
+	TailObj, err = tail.TailFile(fileName, cfg)
 	if err != nil {
-		logrus.Error("tailfile: create tailObj for path: %s failed, err: %v\n")
+		logrus.Error("tailfile: create tailObj for path:%s failed, err:%v\n", fileName, err)
+		return
 	}
 	return
 }

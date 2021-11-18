@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/go-ini/ini"
 	"github.com/sirupsen/logrus"
 	"log_project/logagent/kafka"
 	"log_project/logagent/tailfile"
+	"strings"
+	"time"
 )
 
 type Config struct {
@@ -14,11 +17,42 @@ type Config struct {
 }
 
 type KafkaConfig struct {
-	Address string `ini:"address"`
+	Address  string `ini:"address"`
+	Topic    string `ini:"topic"`
+	ChanSize int64  `ini:"chan_size"`
 }
 
 type CollectConfig struct {
 	LogFilePath string `ini:"logfile_path"`
+}
+
+// run 真正的业务逻辑
+func run() (err error) {
+	// logfile --> TailObj --> log --> Client --> kafka
+	for {
+		line, ok := <-tailfile.TailObj.Lines // chan tail.Line
+		if !ok {
+			logrus.Warn("tail file close reopen, filename:%s\n", tailfile.TailObj.Filename)
+			time.Sleep(time.Second) // 读取出错等一秒
+			continue
+		}
+
+		// 如果是空行就跳过
+		// fmt.Printf("%#v\n", line.Text)
+		if len(strings.Trim(line.Text, "\r")) == 0 {
+			logrus.Info("出现空行, 跳过...")
+			continue
+		}
+
+		// 利用通道将同步的代码改为异步的
+		// 把读出来的一行日志包装秤kafka里面的msg类型
+		msg := &sarama.ProducerMessage{}
+		msg.Topic = "web_log"
+		msg.Value = sarama.StringEncoder(line.Text)
+		// 丢到通道中
+		kafka.ToMsgChan(msg)
+	}
+
 }
 
 func main() {
@@ -43,7 +77,7 @@ func main() {
 	fmt.Printf("%#v\n", configObj)
 
 	// 1. 初始化连接kafka
-	err = kafka.Init([]string{configObj.KafkaConfig.Address})
+	err = kafka.Init([]string{configObj.KafkaConfig.Address}, configObj.KafkaConfig.ChanSize)
 	if err != nil {
 		logrus.Errorf("init kafka failed, err:%v", err)
 		return
@@ -59,4 +93,10 @@ func main() {
 	logrus.Info("init tailfile success!")
 
 	// 3. 把日志通过sarama发往kafka
+	err = run()
+	if err != nil {
+		logrus.Error("run failed, err: %v", err)
+		return
+	}
+
 }
