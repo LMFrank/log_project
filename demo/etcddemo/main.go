@@ -21,7 +21,8 @@ func main() {
 
 	// Put
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	_, err = cli.Put(ctx, "name", "golang")
+	str := `[{"path":"D:/Code/logs/test.log","topic":"web_log"},{"path":"F:/Code/logs/test.log","topic":"mysql_log"}]`
+	_, err = cli.Put(ctx, "collect_log_conf", str)
 	if err != nil {
 		fmt.Printf("Put to etcd failed, err: %v", err)
 		return
@@ -30,7 +31,7 @@ func main() {
 
 	// get
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
-	gr, err := cli.Get(ctx, "name")
+	gr, err := cli.Get(ctx, "collect_log_conf")
 	if err != nil {
 		fmt.Printf("Get from etcd failed, err: %v", err)
 		return
