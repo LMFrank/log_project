@@ -41,7 +41,7 @@ func sendMsg() {
 				logrus.Warning("send msg failed, err:", err)
 				return
 			}
-			logrus.Infof("send msg to kafka success, pid: %v, offset:%v", pid, offset)
+			logrus.Infof("send msg to kafka success, pid: %v, offset: %v", pid, offset)
 		}
 	}
 }

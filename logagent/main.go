@@ -30,10 +30,6 @@ type EtcdConfig struct {
 	CollectKey string `ini:"collect_key"`
 }
 
-func run() {
-
-}
-
 func main() {
 	var configObj = new(Config)
 
