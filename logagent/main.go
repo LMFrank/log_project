@@ -69,7 +69,7 @@ func main() {
 	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
 
 	// 5`. 根据配置中的日志路径初始化tail，把日志通过sarama发往kafka
-	err = tailfile.Init(allConf)
+	err = tailfile.Init(allConf, configObj.Topic)
 	if err != nil {
 		logrus.Errorf("init tailfile failed, err: %v", err)
 		return

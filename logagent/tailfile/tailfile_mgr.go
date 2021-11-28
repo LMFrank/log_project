@@ -15,7 +15,7 @@ var (
 	ttMgr *tailTaskMgr
 )
 
-func Init(allConf []common.CollectEntry) (err error) {
+func Init(allConf []common.CollectEntry, topic string) (err error) {
 	// allConf里面存了若干个日志的收集项,
 	// 针对每一个日志收集项创建一个对应的tailObj
 	ttMgr = &tailTaskMgr{
@@ -33,13 +33,14 @@ func Init(allConf []common.CollectEntry) (err error) {
 		logrus.Infof("create a tail task for path:%s success", conf.Path)
 		ttMgr.tailTaskMap[tt.path] = tt // 把创建的这个tailTask任务登记在册,方便后续管理
 		// 起一个后台的goroutine去收集日志
-		go tt.run()
+		tailTask := &tailTask{topic: topic}
+		go tt.run(tailTask.topic)
 	}
-	go ttMgr.watch() // 在后台等新的配置来
+	go ttMgr.watch(topic) // 在后台等新的配置来
 	return
 }
 
-func (t *tailTaskMgr) watch() {
+func (t *tailTaskMgr) watch(topic string) {
 	for {
 		// 派一个小弟等着新配置来
 		newConf := <-t.confChan // 取到值说明有新的配置
@@ -61,7 +62,7 @@ func (t *tailTaskMgr) watch() {
 			logrus.Infof("create a tail task for path: %s success", conf.Path)
 			t.tailTaskMap[tt.path] = tt // 把创建的这个tailTask任务登记在册,方便后续管理
 			// 起一个后台的goroutine去收集日志
-			go tt.run()
+			go tt.run(topic)
 		}
 
 		// 3. 找出tailTaskMap中存在，但是newConf不存在的那些tailTask，把它们都停掉

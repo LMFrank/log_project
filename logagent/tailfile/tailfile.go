@@ -43,7 +43,7 @@ func (t *tailTask) Init() (err error) {
 	return
 }
 
-func (t *tailTask) run() {
+func (t *tailTask) run(topic string) {
 	logrus.Infof("collect for path: %s is running...", t.path)
 
 	// logfile --> TailObj --> log --> Client --> kafka
@@ -69,7 +69,7 @@ func (t *tailTask) run() {
 			// 利用通道将同步的代码改为异步的
 			// 把读出来的一行日志包装秤kafka里面的msg类型
 			msg := &sarama.ProducerMessage{}
-			msg.Topic = "web_log"
+			msg.Topic = topic
 			msg.Value = sarama.StringEncoder(line.Text)
 			// 丢到通道中
 			kafka.ToMsgChan(msg)
