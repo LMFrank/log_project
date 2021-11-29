@@ -2,6 +2,7 @@ package tailfile
 
 import (
 	"context"
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/hpcloud/tail"
 	"github.com/sirupsen/logrus"
@@ -43,7 +44,7 @@ func (t *tailTask) Init() (err error) {
 	return
 }
 
-func (t *tailTask) run(topic string) {
+func (t *tailTask) run() {
 	logrus.Infof("collect for path: %s is running...", t.path)
 
 	// logfile --> TailObj --> log --> Client --> kafka
@@ -60,7 +61,7 @@ func (t *tailTask) run(topic string) {
 			}
 
 			// 如果是空行就跳过
-			// fmt.Printf("%#v\n", line.Text)
+			fmt.Printf("%#v\n", line.Text)
 			if len(strings.Trim(line.Text, "\r")) == 0 {
 				logrus.Info("出现空行, 跳过...")
 				continue
@@ -69,7 +70,7 @@ func (t *tailTask) run(topic string) {
 			// 利用通道将同步的代码改为异步的
 			// 把读出来的一行日志包装秤kafka里面的msg类型
 			msg := &sarama.ProducerMessage{}
-			msg.Topic = topic
+			msg.Topic = t.topic
 			msg.Value = sarama.StringEncoder(line.Text)
 			// 丢到通道中
 			kafka.ToMsgChan(msg)
